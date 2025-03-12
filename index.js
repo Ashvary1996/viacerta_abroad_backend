@@ -1,33 +1,38 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const cors = require("cors");
-const cookieParser = require("cookie-parser");
-require("dotenv").config({ path: "./config/.env" });
-const connectToDb = require("./dbConnector");
-// const { sendToken } = require("./utils/jwtToken");
+import "dotenv/config";
+import express from "express";
+import bodyParser from "body-parser";
+import connectToDb from "./config/dbConfig.js"; // Add `.js` to avoid ESM errors
+import userRoutes from "./routes/usersRoute.js"; // Add `.js`
+
+// const cors = require("cors");
+// const cookieParser = require("cookie-parser");
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 8000;
 
 // .................................................................
-const allowedOrigins = ["http://localhost:3000", process.env.CORS_ORIGIN];
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-  })
-);
+// Uncomment if CORS is needed
+// const allowedOrigins = ["http://localhost:3000", process.env.CORS_ORIGIN || ""].filter(Boolean);
+
+// app.use(
+//   cors({
+//     origin: allowedOrigins,
+//     credentials: true,
+//   })
+// );
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser());
+// app.use(cookieParser());
 
 // .................................................................
 
-// app.use("/demo", (req, res) => res.send("Hello World"));
+ 
+app.use("/demo", (req, res) => res.send("Hello World"));
 
-// app.use("/user", require("./routes/UserRoute"));
+ 
+app.use("/api/user", userRoutes);
 // app.use("/home", require("./routes/HomeRoute"));
 // app.use("/product", require("./routes/ProductRoute"));
 // app.use("/user/cart", require("./routes/CartRoute"));
@@ -35,8 +40,24 @@ app.use(cookieParser());
 
 // .................................................................
 
-app.listen(port, () => console.log(`App listening on port: ${port}!`));
-connectToDb();
+// Start Server Immediately
+app.listen(port, () => console.log(`🚀 Server running on port: ${port}`));
+
+// Connect to Database (Without Blocking Server)
+connectToDb().catch((err) => {
+  console.error("⚠️ Database connection failed:", err.message);
+});
 
 // .................................................................
-module.exports = app;
+
+// Handle Uncaught Errors (Optional but Recommended)
+process.on("uncaughtException", (err) => {
+  console.error("❌ Uncaught Exception:", err);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("❌ Unhandled Rejection:", reason);
+});
+
+export default app;
+
