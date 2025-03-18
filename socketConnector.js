@@ -1,7 +1,7 @@
 import { Server } from "socket.io";
 import faqData from "./faqData.js";
 import SupportRoom from "./models/supportRoom.js";
- 
+
 const SUPPORT_HOURS = { start: 10, end: 23 };
 const userRooms = new Map();
 const activeSupportRooms = new Set();
@@ -105,9 +105,9 @@ const socketFn = (server) => {
         ) {
           const newRoom = new SupportRoom({ roomId });
           await newRoom.save();
-// 
+          //
           // supportRoomEmitter.emit('new_support_room',newRoom)
-          // 
+          //
 
           activeSupportRooms.add(roomId);
           io.emit("support_request", { roomId });
@@ -122,6 +122,7 @@ const socketFn = (server) => {
             const room = await SupportRoom.findOne({ roomId });
             if (room && room.status === "active") {
               await SupportRoom.deleteOne({ roomId });
+              io.to(roomId).emit("support_room_closed", { roomId });
               io.to(roomId).emit("bot_message", {
                 text: "No support agent joined within 5 minutes. Please try again later.",
                 sender: "bot",
@@ -147,15 +148,22 @@ const socketFn = (server) => {
         const room = await SupportRoom.findOne({ roomId });
         if (room) {
           await SupportRoom.deleteOne({ roomId });
-
           activeSupportRooms.delete(roomId);
+
+          io.emit("support_room_closed", { roomId });
+
+          // Send updated room list to admin clients
+          io.emit(
+            "active_support_rooms",
+            await SupportRoom.find({ status: "active" })
+          );
+
           io.to(roomId).emit("bot_message", {
             text: "Support request has been closed.",
             sender: "bot",
             roomId,
           });
           socket.emit("support_room_status", { exists: false });
-          io.emit("support_room_closed", { roomId });
         }
       } catch (error) {
         console.error("Error closing support request:", error);
@@ -199,6 +207,7 @@ const socketFn = (server) => {
     socket.on("close_support_room", async ({ roomId }) => {
       try {
         await SupportRoom.deleteOne({ roomId });
+        
         io.to(roomId).emit("support_room_closed", { roomId });
         io.emit(
           "active_support_rooms",
@@ -249,6 +258,7 @@ const socketFn = (server) => {
         const room = await SupportRoom.findOne({ roomId });
         if (!room) {
           console.log(`Room ${roomId} not found in database`);
+          io.emit("support_room_closed", { roomId });
           return;
         }
 

@@ -71,7 +71,26 @@ function Chat() {
       }
     };
   }, []);
+//  this useEffect to handle support room closure events
+useEffect(() => {
+  const handleSupportRoomClosed = () => {
+    setIsSupportRoomActive(false);
+    localStorage.setItem(
+      "isViaCertaSupportRoomActive",
+      JSON.stringify(false)
+    );
+  };
 
+  if (socketRef.current) {
+    socketRef.current.on("support_room_closed", handleSupportRoomClosed);
+  }
+
+  return () => {
+    if (socketRef.current) {
+      socketRef.current.off("support_room_closed", handleSupportRoomClosed);
+    }
+  };
+}, []);
   useEffect(() => {
     if (roomId) {
       socketRef.current.emit("check_support_room", { roomId });

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { io } from "socket.io-client";
 
 const Support = () => {
@@ -6,9 +6,24 @@ const Support = () => {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const [isClosing, setIsClosing] = useState(false); // New state for closing animation
   const socketRef = useRef(null);
-  const messagesEndRef = useRef(null); // Ref for auto-scroll
+  const messagesEndRef = useRef(null);
+  const handleRoomClosed = useCallback(
+    ({ roomId }) => {
+      setActiveRooms((prev) => prev.filter((room) => room.roomId !== roomId));
 
+      if (selectedRoom === roomId) {
+        setIsClosing(true);
+        setTimeout(() => {
+          setSelectedRoom(null);
+          setMessages([]);
+          setIsClosing(false);
+        }, 3000);
+      }
+    },
+    [selectedRoom]
+  );
   // Initialize socket connection
   useEffect(() => {
     socketRef.current = io("http://localhost:8000");
@@ -40,13 +55,15 @@ const Support = () => {
 
     const messageHandler = (message) => {
       if (message.roomId === selectedRoom) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            ...message,
-            timestamp: message.timestamp || new Date().toLocaleTimeString(),
-          },
-        ]);
+        setMessages((prev) => {
+          const exists = prev.some(
+            (m) =>
+              m.text === message.text &&
+              m.sender === message.sender &&
+              m.timestamp === message.timestamp
+          );
+          return exists ? prev : [...prev, message];
+        });
       }
     };
 
@@ -63,27 +80,28 @@ const Support = () => {
         ]);
       }
     };
-
+    socket.on("support_room_closed", handleRoomClosed);
     socket.on("new_message", messageHandler);
     socket.on("bot_message", botHandler);
 
     return () => {
       socket.off("new_message", messageHandler);
       socket.off("bot_message", botHandler);
+      socket.off("support_room_closed", handleRoomClosed);
     };
-  }, [selectedRoom]);
+  }, [selectedRoom, handleRoomClosed]);
 
+  // Auto-scroll to latest message
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, handleRoomClosed]);
 
   const handleJoinRoom = (roomId) => {
     if (socketRef.current) {
       socketRef.current.emit("join_user_room", { roomId });
       setSelectedRoom(roomId);
       setMessages([]);
+      setIsClosing(false); // Reset closing state when joining a new room
     }
   };
 
@@ -103,92 +121,125 @@ const Support = () => {
         Active Support Rooms ({activeRooms.length})
       </h1>
 
-      {/* Active Rooms Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {activeRooms.map((room) => (
+        {activeRooms.map((room, index) => (
           <div
             key={room.roomId}
             className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
           >
-            <h2 className="text-lg font-semibold">Room ID: {room.roomId}</h2>
-            <div className="mt-4 flex space-x-2">
-              <button
-                onClick={() => handleJoinRoom(room.roomId)}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-200"
-              >
-                Join Room
-              </button>
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="flex items-center mb-2">
+                  <span className="text-gray-500 mr-2">#{index + 1}</span>
+                  <h2 className="text-lg font-semibold">
+                    Room ID: {room.roomId}
+                  </h2>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleJoinRoom(room.roomId)}
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm"
+                  >
+                    Join Room
+                  </button>
+                  <button
+                    onClick={() => {
+                      const isConfirmed = window.confirm(
+                        "Are you sure you want to close this room?"
+                      );
+                      if (isConfirmed && socketRef.current) {
+                        socketRef.current.emit("close_support_room", {
+                          roomId: room.roomId,
+                        });
+                      }
+                    }}
+                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm"
+                  >
+                    Close Room
+                  </button>
+                </div>
+              </div>
+              {selectedRoom === room.roomId && (
+                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">
+                  Active
+                </span>
+              )}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Chat Modal */}
       {selectedRoom && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl flex flex-col max-h-[90vh]">
-            {/* Chat Header */}
-            <div className="bg-blue-600 text-white p-4 rounded-t-lg">
-              <h2 className="text-xl font-bold">Chat with User</h2>
-              <p className="text-sm">Room ID: {selectedRoom}</p>
+        <div
+          className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 transition-opacity duration-1000 ${
+            isClosing ? "opacity-0" : "opacity-100"
+          }`}
+        >
+          <div className="bg-white p-6 rounded-lg w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Chat Room #{selectedRoom}</h2>
+              <button
+                onClick={() => {
+                  setIsClosing(true);
+                  setTimeout(() => setSelectedRoom(null), 3000);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
             </div>
 
-            {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="h-64 overflow-y-auto mb-4 border rounded-lg p-3 bg-gray-50">
               {messages.map((msg, index) => (
                 <div
                   key={`${msg.timestamp}-${index}`}
                   className={`flex ${
                     msg.sender === "support" ? "justify-end" : "justify-start"
-                  }`}
+                  } mb-3`}
                 >
                   <div
-                    className={`flex items-start max-w-xs px-4 py-2 rounded-lg shadow ${
-                      msg.sender === "support"
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-200 text-gray-800"
+                    className={`flex items-start max-w-xs ${
+                      msg.sender === "support" ? "flex-row-reverse" : ""
                     }`}
                   >
-                    {/* Emoji */}
-                    <div className="mr-2">
-                      {msg.sender === "support" && "👩‍💻"}
-                      {msg.sender === "user" && "🧑"}
+                    <div className="mr-2 text-xl">
                       {msg.sender === "bot" && "🤖"}
+                      {msg.sender === "user" && "🧑"}
+                      {msg.sender === "support" && "👩‍💻"}
                     </div>
-
-                    {/* Message Text */}
-                    <div>{msg.text}</div>
+                    <div
+                      className={`px-3 py-2 rounded-lg shadow ${
+                        msg.sender === "support"
+                          ? "bg-purple-500 text-white"
+                          : msg.sender === "bot"
+                          ? "bg-purple-500 text-white"
+                          : "bg-blue-500 text-white"
+                      }`}
+                    >
+                      <p className="text-sm">{msg.text}</p>
+                      <p className="text-xs mt-1 opacity-70">{msg.timestamp}</p>
+                    </div>
                   </div>
                 </div>
               ))}
-              {/* Empty div for auto-scroll */}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Chat Input */}
-            <div className="p-4 border-t">
+            <div className="flex space-x-2">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Type a message..."
+                placeholder="Type your message..."
+                className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <div className="flex space-x-2 mt-2">
-                <button
-                  onClick={handleSendMessage}
-                  className="flex-1 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-200"
-                >
-                  Send
-                </button>
-                <button
-                  onClick={() => setSelectedRoom(null)}
-                  className="flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition duration-200"
-                >
-                  Close Chat
-                </button>
-              </div>
+              <button
+                onClick={handleSendMessage}
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Send
+              </button>
             </div>
           </div>
         </div>
