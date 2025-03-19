@@ -1,4 +1,3 @@
- 
 import mongoose from "mongoose";
 
 const OurStudentsSchema = new mongoose.Schema(
@@ -14,8 +13,6 @@ const OurStudentsSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const OurStudents =
-  mongoose.models.ourstudents ||
-  mongoose.model("ourstudents", OurStudentsSchema);
+const OurStudents = mongoose.model("ourstudents", OurStudentsSchema);
 
 export default OurStudents;

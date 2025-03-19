@@ -144,9 +144,7 @@ const Support = () => {
                   </button>
                   <button
                     onClick={() => {
-                      const isConfirmed = window.confirm(
-                        "Are you sure you want to close this room?"
-                      );
+                      const isConfirmed = window.confirm("Are you sure you want to close this room?");
                       if (isConfirmed && socketRef.current) {
                         socketRef.current.emit("close_support_room", {
                           roomId: room.roomId,

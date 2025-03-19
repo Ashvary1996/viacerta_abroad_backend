@@ -70,8 +70,6 @@ const mbbsCampaignSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const MBBS_InterestedUser =
-  mongoose.models.campaign_mbbs ||
-  mongoose.model("campaign_mbbs", mbbsCampaignSchema);
+const MBBS_InterestedUser = mongoose.model("campaign_mbbs", mbbsCampaignSchema);
 
 export default MBBS_InterestedUser;

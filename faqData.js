@@ -1,14 +1,21 @@
 const faqData = {
   questions: [
     {
-      question: "What services does ViaCerta Abroad provide?",
+      question: `What services does ViaCerta Abroad provide?`,
       answer:
         "ViaCerta Abroad offers comprehensive study abroad services, including:\n\n" +
         "- **University Admissions Assistance** – Helping students apply to top universities worldwide.\n" +
         "- **Scholarship & Financial Aid Support** – Guidance on securing funding for education.\n" +
         "- **Visa & Immigration Support** – Assistance with visa applications and documentation.\n" +
         "- **Career Counseling** – Personalized guidance to choose the right career path.\n" +
-        "- **Global University Partnerships** – Connections with 500+ international universities.\n",
+        "- **Global University Partnerships** – Connections with 500+ international universities.\n\n" +
+        "Here’s a quick overview of our services:\n\n" +
+        "| Service                        | Description                                      |\n" +
+        "|--------------------------------|--------------------------------------------------|\n" +
+        "| University Admissions          | Assistance with applications to top universities |\n" +
+        "| Scholarships                   | Guidance on securing scholarships               |\n" +
+        "| Visa Support                   | Help with visa applications                     |\n" +
+        "| Career Counseling              | Personalized career advice                     |\n",
       followUp: [
         "How do I start my application process with ViaCerta Abroad?",
         "Do you assist with education loans for studying abroad?",
@@ -24,7 +31,8 @@ const faqData = {
         "3. **Application Submission** – Our team assists with filling out and submitting your application.\n" +
         "4. **Scholarship & Financial Aid Assistance** – Get support in securing scholarships and funding options.\n" +
         "5. **Visa Processing** – We guide you through the visa application process for hassle-free approval.\n" +
-        "6. **Pre-Departure Assistance** – Receive travel and accommodation guidance before moving abroad.\n",
+        "6. **Pre-Departure Assistance** – Receive travel and accommodation guidance before moving abroad.\n\n" +
+        "> **Tip:** Start your application early to avoid last-minute delays!\n",
       followUp: [
         "What documents are required to apply for a study abroad program?",
         "How long does the application process take?",
@@ -38,7 +46,14 @@ const faqData = {
         "- **Merit-Based Scholarships** – Awarded based on academic performance.\n" +
         "- **Need-Based Scholarships** – For students with financial constraints.\n" +
         "- **University-Specific Scholarships** – Offered by partner universities.\n" +
-        "- **Government & External Scholarships** – Assistance in applying for international scholarships from governments and private organizations.\n",
+        "- **Government & External Scholarships** – Assistance in applying for international scholarships from governments and private organizations.\n\n" +
+        "Here’s a breakdown of scholarship types:\n\n" +
+        "| Scholarship Type               | Description                                      |\n" +
+        "|--------------------------------|--------------------------------------------------|\n" +
+        "| Merit-Based                    | Based on academic excellence                    |\n" +
+        "| Need-Based                     | For students with financial need                |\n" +
+        "| University-Specific            | Offered by partner universities                 |\n" +
+        "| Government & External          | From governments and private organizations      |\n",
       followUp: [
         "What are the eligibility criteria for scholarships?",
         "How can I improve my chances of getting a scholarship?",
@@ -54,7 +69,15 @@ const faqData = {
         "- **Canada** – High-quality education and post-study work opportunities.\n" +
         "- **Australia** – Strong academic reputation and global career prospects.\n" +
         "- **Germany** – Affordable education and top-ranked universities.\n" +
-        "- **Other Countries** – Including Ireland, Netherlands, Singapore, and more.\n",
+        "- **Other Countries** – Including Ireland, Netherlands, Singapore, and more.\n\n" +
+        "Here’s a list of popular destinations:\n\n" +
+        "| Country       | Highlights                                      |\n" +
+        "|---------------|-------------------------------------------------|\n" +
+        "| USA           | Ivy League universities, diverse courses       |\n" +
+        "| UK            | Prestigious institutions, short course duration|\n" +
+        "| Canada        | Post-study work permits, affordable education  |\n" +
+        "| Australia     | Global career opportunities, vibrant lifestyle |\n" +
+        "| Germany       | Tuition-free education, strong engineering programs |\n",
       followUp: [
         "Which country is the best for my field of study?",
         "Do you provide country-specific visa assistance?",
@@ -81,42 +104,62 @@ const faqData = {
       question: "How do I start my application process with ViaCerta Abroad?",
       answer:
         "You can start by booking a free consultation with our study abroad experts. They will guide you through university selection, application processes, and scholarship opportunities.",
+      followUp: [],
     },
     {
       question: "Do you assist with education loans for studying abroad?",
       answer:
         "Yes, we provide guidance on securing education loans from banks and financial institutions that support international students.",
+      followUp: [],
     },
     {
       question:
         "What documents are required to apply for a study abroad program?",
       answer:
-        "Commonly required documents include academic transcripts, letters of recommendation, a statement of purpose, a valid passport, and proof of language proficiency.",
+        "Commonly required documents include:\n\n" +
+        "- Academic transcripts\n" +
+        "- Letters of recommendation\n" +
+        "- Statement of purpose\n" +
+        "- Valid passport\n" +
+        "- Proof of language proficiency (e.g., IELTS, TOEFL)\n",
+      followUp: [],
     },
     {
       question: "How long does the application process take?",
       answer:
         "The process varies by university and country but generally takes between 4 to 12 weeks. Applying early is recommended.",
+      followUp: [],
     },
     {
       question: "Can I apply to multiple universities at the same time?",
       answer:
         "Yes, we encourage students to apply to multiple universities to increase their chances of acceptance.",
+      followUp: [],
     },
     {
       question: "What are the eligibility criteria for scholarships?",
       answer:
-        "Eligibility varies by scholarship, but most require academic excellence, financial need, and sometimes extracurricular achievements.",
+        "Eligibility varies by scholarship, but most require:\n\n" +
+        "- Academic excellence\n" +
+        "- Financial need\n" +
+        "- Extracurricular achievements (in some cases)\n",
+      followUp: [],
     },
     {
       question: "How can I improve my chances of getting a scholarship?",
       answer:
-        "Maintain high academic performance, engage in extracurricular activities, and write a strong personal statement when applying.",
+        "To improve your chances of securing a scholarship:\n\n" +
+        "- Maintain high academic performance\n" +
+        "- Engage in extracurricular activities\n" +
+        "- Write a strong personal statement\n" +
+        "- Apply early and meet all deadlines\n",
+      followUp: [],
     },
     {
       question: "Are there scholarships available for postgraduate programs?",
       answer:
         "Yes, many universities and organizations offer scholarships for master’s and PhD programs. We help identify suitable options for students.",
+      followUp: [],
     },
   ],
 };

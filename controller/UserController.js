@@ -2,7 +2,9 @@ import User from "../models/users.js";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+const crypto = require("crypto");
 import cookie from "cookie";
+import { authenticate } from "../utils/isAuthenticate.js";
 
 const signUp = async (req, res) => {
   try {
@@ -261,4 +263,187 @@ const login = async (req, res) => {
   }
 };
 
-export { signUp, verify, login };
+const me = async (req, res) => {
+  const auth = await authenticate(req);
+
+  if (!auth.success) {
+    return res.status(401).json({ success: false, message: auth.message });
+  }
+  try {
+    const myDetails = await User.findById(auth.user.id);
+    if (!myDetails) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Protected route accessed",
+      fromToken: auth.user,
+      user: myDetails,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error retrieving user details",
+      error: error.message,
+    });
+  }
+};
+
+const updateProfile = async (req, res) => {
+  try {
+    const { id, name, email, mobile, address, role } = req.body;
+
+    if (!id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User ID is required." });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { name, email, mobile, address, role },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully.",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error.",
+      error: error.message,
+    });
+  }
+};
+
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Please provide an email." });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
+    }
+
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const hashedOtp = await bcrypt.hash(otp, 10);
+    user.otp = hashedOtp;
+    user.otpExpiry = Date.now() + 5 * 60 * 1000; // OTP valid for 5 minutes
+    await user.save();
+
+    const data = { email, otp, name: user.name };
+    await sendEmail(email, data, "password_Reset_Otp");
+
+    res
+      .status(200)
+      .json({ success: true, message: "OTP sent to your registered email." });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error.",
+      error: error.message,
+    });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, OTP, and new password are required.",
+      });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
+    }
+
+    if (!user.otp) {
+      return res.status(404).json({
+        success: false,
+        message: "OTP not found, generate a new one.",
+      });
+    }
+
+    const isOtpValid = await bcrypt.compare(otp, user.otp);
+    if (!isOtpValid || Date.now() > user.otpExpiry) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid or expired OTP." });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.otp = null;
+    user.otpExpiry = null;
+    await user.save();
+
+    res
+      .status(200)
+      .json({ success: true, message: "Password reset successful." });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error.",
+      error: error.message,
+    });
+  }
+};
+
+const logOut = async (req, res) => {
+  try {
+    res.setHeader(
+      "Set-Cookie",
+      cookie.serialize("auth_token", "", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+        expires: new Date(0),
+      })
+    );
+
+    res.status(200).json({ success: true, message: "Logged out successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Logout failed", error });
+  }
+};
+
+export {
+  signUp,
+  verify,
+  login,
+  me,
+  updateProfile,
+  forgotPassword,
+  resetPassword,
+  logOut,
+};

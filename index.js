@@ -3,7 +3,6 @@ import express from "express";
 import bodyParser from "body-parser";
 import connectToDb from "./config/dbConfig.js"; // Add `.js` to avoid ESM errors
 import userRoutes from "./routes/usersRoute.js"; // Add `.js`
-
 import { createServer } from "http";
 import cors from "cors";
 import socketFn from "./socketConnector.js";
@@ -32,7 +31,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // .................................................................
 
 app.use("/demo", (req, res) => res.send("Hello World"));
-
 app.use("/api/user", userRoutes);
 
 // ///////////////////////////////

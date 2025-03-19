@@ -14,7 +14,6 @@ function Chat() {
   const [isSupportRoomActive, setIsSupportRoomActive] = useState(false);
   const [userMessageCount, setUserMessageCount] = useState(0);
 
-  // ////////
   useEffect(() => {
     let storedUserId = localStorage.getItem("ViaCerta_User");
 
@@ -35,14 +34,11 @@ function Chat() {
         setPreDefinedQuestions(questions);
       }
     };
-    // _________ Socket events _________
+
     socket.emit("joinRoom", { roomId: storedUserId });
     socket.on("predefined_questions", handlePredefinedQuestions);
-    //
 
     socket.on("new_message", (message) => {
-      // setMessages((prev) => [...prev, message]);
-
       setMessages((prev) => {
         if (
           !prev.some(
@@ -54,7 +50,6 @@ function Chat() {
         return prev;
       });
     });
-    //
 
     socket.on("bot_message", (response) => {
       const botMessage = {
@@ -66,7 +61,6 @@ function Chat() {
       setMessages((prev) => [...prev, botMessage]);
     });
 
-    // _________
     setTimeout(() => {
       setShowPredefined(true);
     }, 1500);
@@ -74,6 +68,26 @@ function Chat() {
     return () => {
       if (socket) {
         socket.disconnect();
+      }
+    };
+  }, []);
+  //  this useEffect to handle support room closure events
+  useEffect(() => {
+    const handleSupportRoomClosed = () => {
+      setIsSupportRoomActive(false);
+      localStorage.setItem(
+        "isViaCertaSupportRoomActive",
+        JSON.stringify(false)
+      );
+    };
+
+    if (socketRef.current) {
+      socketRef.current.on("support_room_closed", handleSupportRoomClosed);
+    }
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off("support_room_closed", handleSupportRoomClosed);
       }
     };
   }, []);
@@ -93,9 +107,7 @@ function Chat() {
     if (storedStatus !== null) {
       setIsSupportRoomActive(storedStatus);
     }
-    // socketRef.current("support_joined", ({ roomId }) => {
-    //   // setRoomsWithSupport((prev) => new Set(prev).add(roomId));
-    // });
+
     return () => {
       socketRef.current.off("support_room_status");
     };
@@ -109,6 +121,7 @@ function Chat() {
   }, [isSupportRoomActive]);
 
   const isChatbotDisabled = isSupportRoomActive;
+
   useEffect(() => {
     if (chatRef.current) {
       chatRef.current.scrollTo({
@@ -118,7 +131,6 @@ function Chat() {
     }
   }, [messages]);
 
-  // Handle predefined question click
   const handlePredefinedClick = (question) => {
     const userMessage = {
       text: question,
@@ -126,40 +138,33 @@ function Chat() {
       timestamp: new Date().toLocaleTimeString(),
     };
     setMessages((prev) => [...prev, userMessage]);
-    socketRef.current.emit("user_message", { message: question, roomId });
-
     setUserMessageCount((prev) => prev + 1);
+    socketRef.current.emit("user_message", { message: question, roomId });
   };
 
   const handleSend = () => {
     const trimmedInput = input.trim();
     if (!trimmedInput) return;
-// //
-    
-if(!isSupportRoomActive){
-  const userMessage = {
-    text: trimmedInput,
-    sender: "user",
-    timestamp: new Date().toLocaleTimeString(),
-  };
-  setMessages((prev) => [...prev, userMessage]);
-}
 
-    // //
+    if (!isSupportRoomActive) {
+      const userMessage = {
+        text: trimmedInput,
+        sender: "user",
+        timestamp: new Date().toLocaleTimeString(),
+      };
+      setMessages((prev) => [...prev, userMessage]);
+    }
+
+    setUserMessageCount((prev) => prev + 1);
     socketRef.current.emit("user_message", { message: trimmedInput, roomId });
     setInput("");
-    setUserMessageCount((prev) => prev + 1);
   };
 
   const clearChat = () => {
     setMessages([]);
     setPreDefinedQuestions([]);
     setShowPredefined(false);
-    // setTimeout(() => {
-    //   setMessages([
-    //     { sender: "bot", text: "Hello! How can I help you today?" },
-    //   ]);
-    // }, 1000);
+    setUserMessageCount(0);
   };
 
   const requestSupport = () => {
@@ -176,12 +181,12 @@ if(!isSupportRoomActive){
   };
 
   return (
-    <div className="w-96 border border-gray-300 rounded-lg flex flex-col bg-gray-100 shadow-lg m-auto">
+    <div className="flex flex-col h-[70vh] w-[60%] bg-gray-100 rounded-lg shadow-lg m-auto">
       {/* Header */}
-      <div className="flex justify-between items-center bg-blue-600 text-white p-3">
+      <div className="flex justify-between items-center bg-blue-600 text-white p-4 rounded-t-lg">
         <h2 className="text-lg font-semibold">ViaCerta Bot</h2>
         <button
-          className="text-sm bg-red-500 px-3 py-1 rounded hover:bg-red-600"
+          className="text-sm bg-red-500 px-3 py-1 rounded hover:bg-red-600 transition duration-200"
           onClick={clearChat}
         >
           Clear Chat
@@ -189,32 +194,30 @@ if(!isSupportRoomActive){
       </div>
 
       {/* Chat messages container */}
-      <div ref={chatRef} className="overflow-y-auto p-3 space-y-2 h-64 ">
-        <h2 className="font-medium text-left p-1">
-          🤖 "Hello! How can I help you today?"
-        </h2>
-
-        {isChatbotDisabled ? (
-          <div className="text-center text-gray-500">
-            Chatbot responses are disabled while you have an active support
-            request.
+      <div
+        ref={chatRef}
+        className="flex-1 overflow-y-auto p-4 space-y-4 bg-white"
+      >
+        {/* Welcome message */}
+        <div className="flex justify-start">
+          <div className="max-w-xs bg-gray-200 text-gray-800 px-4 py-2 rounded-lg shadow">
+            🤖 Hello! How can I help you today?
           </div>
-        ) : (
-          <>
-            {preDefinedQuestions.length > 0 && (
-              <div className="mt-2">
-                {preDefinedQuestions.map((q, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handlePredefinedClick(q)}
-                    className="block w-full text-left bg-blue-500 text-white px-3 py-1 rounded mb-1 hover:bg-blue-700 transition duration-200"
-                  >
-                    {q}
-                  </button>
-                ))}
-              </div>
-            )}
-          </>
+        </div>
+
+        {/* Predefined questions */}
+        {!isChatbotDisabled && preDefinedQuestions.length > 0 && (
+          <div className="space-y-2">
+            {preDefinedQuestions.map((q, index) => (
+              <button
+                key={index}
+                onClick={() => handlePredefinedClick(q)}
+                className="block w-full text-left bg-blue-200 text-blue-800 px-4 py-2 rounded-lg hover:bg-blue-200 transition duration-200"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
         )}
 
         {/* Messages */}
@@ -226,15 +229,25 @@ if(!isSupportRoomActive){
             }`}
           >
             <div
-              className={`max-w-xs px-3 py-2 rounded-lg shadow ${
+              className={`flex items-start max-w-xs px-4 py-2 rounded-lg shadow ${
                 msg.sender === "user"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-300 text-black"
+                  ? "bg-blue-500 text-white flex-row-reverse"
+                  : msg.sender === "support"
+                  ? "bg-purple-500 text-white"
+                  : "bg-gray-200 text-gray-800"
               }`}
             >
-              {msg.sender === "bot" ? "🤖" : "🧑"}{" "}
-              <ReactMarkdown>{msg.text}</ReactMarkdown>
-              {msg.followUp && Array.isArray(msg.followUp) && (
+              {/* Emoji */}
+              <div className="mr-2">
+                {msg.sender === "bot" && "🤖"}
+                {msg.sender === "user" && "🧑"}
+                {msg.sender === "support" && "👩‍💻"}
+              </div>
+
+              {/* Message text */}
+              <div>
+                <ReactMarkdown>{msg.text}</ReactMarkdown>
+                {msg.followUp && Array.isArray(msg.followUp) && (
                 <div className="mt-2">
                   {msg.followUp.map((q, i) => (
                     <button
@@ -247,45 +260,49 @@ if(!isSupportRoomActive){
                   ))}
                 </div>
               )}
+              </div>
             </div>
           </div>
         ))}
       </div>
 
       {/* Input area */}
-      <div className="flex mt-2">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          className="flex-1 p-2 border rounded"
-          placeholder="Type a message..."
-        />
-        <button
-          onClick={handleSend}
-          className="ml-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700 transition duration-200"
-        >
-          Send
-        </button>
-      </div>
-
-      {isSupportRoomActive ? (
-        <button
-          onClick={handleCloseSupport}
-          className="mt-2 w-full bg-gray-700 text-white px-3 py-1 rounded hover:bg-gray-900 transition duration-200"
-        >
-          Close Support
-        </button>
-      ) : (
-        userMessageCount >= 5 && (
+      <div className="p-4 bg-gray-100 border-t border-gray-200 rounded-b-lg">
+        <div className="flex space-x-2">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Type a message..."
+          />
           <button
-            onClick={requestSupport}
-            className="mt-2 w-full bg-orange-500 text-white px-3 py-1 rounded hover:bg-yellow-700 transition duration-200"
+            onClick={handleSend}
+            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200"
           >
-            Connect with Support
+            Send
           </button>
-        )
-      )}
+        </div>
+
+        {/* Support buttons */}
+        {isSupportRoomActive ? (
+          <button
+            onClick={handleCloseSupport}
+            className="w-full mt-2 bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition duration-200"
+          >
+            Close Support
+          </button>
+        ) : (
+          userMessageCount >= 5 && (
+            <button
+              onClick={requestSupport}
+              className="w-full mt-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition duration-200"
+            >
+              Connect with Support
+            </button>
+          )
+        )}
+      </div>
     </div>
   );
 }

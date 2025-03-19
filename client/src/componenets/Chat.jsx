@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { v4 as uuidv4 } from "uuid";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
 
 function Chat() {
   const socketRef = useRef(null);
@@ -67,30 +69,35 @@ function Chat() {
 
     return () => {
       if (socket) {
+        socket.off("predefined_questions", handlePredefinedQuestions);
+        socket.off("new_message");
+        socket.off("bot_message");
         socket.disconnect();
+      
       }
     };
   }, []);
-//  this useEffect to handle support room closure events
-useEffect(() => {
-  const handleSupportRoomClosed = () => {
-    setIsSupportRoomActive(false);
-    localStorage.setItem(
-      "isViaCertaSupportRoomActive",
-      JSON.stringify(false)
-    );
-  };
 
-  if (socketRef.current) {
-    socketRef.current.on("support_room_closed", handleSupportRoomClosed);
-  }
+  useEffect(() => {
+    const handleSupportRoomClosed = () => {
+      setIsSupportRoomActive(false);
+      localStorage.setItem(
+        "isViaCertaSupportRoomActive",
+        JSON.stringify(false)
+      );
+    };
 
-  return () => {
     if (socketRef.current) {
-      socketRef.current.off("support_room_closed", handleSupportRoomClosed);
+      socketRef.current.on("support_room_closed", handleSupportRoomClosed);
     }
-  };
-}, []);
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off("support_room_closed", handleSupportRoomClosed);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     if (roomId) {
       socketRef.current.emit("check_support_room", { roomId });
@@ -180,16 +187,19 @@ useEffect(() => {
   };
 
   return (
-    <div className="flex flex-col h-[70vh] w-[60%] bg-gray-100 rounded-lg shadow-lg m-auto">
+    <div className="flex flex-col h-[90vh] w-[60%] bg-gray-100 rounded-lg shadow-lg m-auto">
       {/* Header */}
       <div className="flex justify-between items-center bg-blue-600 text-white p-4 rounded-t-lg">
         <h2 className="text-lg font-semibold">ViaCerta Bot</h2>
-        <button
-          className="text-sm bg-red-500 px-3 py-1 rounded hover:bg-red-600 transition duration-200"
-          onClick={clearChat}
-        >
-          Clear Chat
-        </button>
+
+        {userMessageCount === 10 && (
+          <button
+            className="text-sm bg-red-500 px-3 py-1 rounded hover:bg-red-600 transition duration-200"
+            onClick={clearChat}
+          >
+            Clear Chat
+          </button>
+        )}
       </div>
 
       {/* Chat messages container */}
@@ -211,7 +221,7 @@ useEffect(() => {
               <button
                 key={index}
                 onClick={() => handlePredefinedClick(q)}
-                className="block w-full text-left bg-blue-200 text-blue-800 px-4 py-2 rounded-lg hover:bg-blue-200 transition duration-200"
+                className="block w-full text-left bg-blue-200 text-blue-800 px-4 py-2 rounded-lg hover:bg-blue-300 transition duration-200"
               >
                 {q}
               </button>
@@ -228,7 +238,7 @@ useEffect(() => {
             }`}
           >
             <div
-              className={`flex items-start max-w-xs px-4 py-2 rounded-lg shadow ${
+              className={`flex items-start max-w-[60%] px-4 py-2 rounded-lg shadow ${
                 msg.sender === "user"
                   ? "bg-blue-500 text-white flex-row-reverse"
                   : msg.sender === "support"
@@ -244,8 +254,27 @@ useEffect(() => {
               </div>
 
               {/* Message text */}
-              <div>
-                <ReactMarkdown>{msg.text}</ReactMarkdown>
+              <div className="prose">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight]}
+                >
+                  {msg.text}
+                </ReactMarkdown>
+
+                {msg.followUp && Array.isArray(msg.followUp) && (
+                  <div className="mt-2 ">
+                    {msg.followUp.map((q, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handlePredefinedClick(q)}
+                        className="text-left block w-full   bg-lime-800 text-white px-3 py-1 rounded mb-1 hover:bg-teal-700 transition duration-200"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

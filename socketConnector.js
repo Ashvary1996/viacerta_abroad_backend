@@ -207,7 +207,7 @@ const socketFn = (server) => {
     socket.on("close_support_room", async ({ roomId }) => {
       try {
         await SupportRoom.deleteOne({ roomId });
-        
+
         io.to(roomId).emit("support_room_closed", { roomId });
         io.emit(
           "active_support_rooms",
@@ -283,6 +283,14 @@ const socketFn = (server) => {
     socket.on("disconnect", () => {
       const roomId = userRooms.get(socket.id);
       console.log(`❌ User ${socket.id} disconnected from room: ${roomId}`);
+
+      // Cleanup server-side resources
+      if (roomId) {
+        activeSupportRooms.delete(roomId);
+        SupportRoom.deleteOne({ roomId }).catch(console.error);
+        io.emit("active_support_rooms", Array.from(activeSupportRooms));
+      }
+
       userRooms.delete(socket.id);
     });
 

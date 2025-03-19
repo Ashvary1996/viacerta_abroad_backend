@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import validator from "validator";
 
-const userEnquirySchema = new mongoose.Schema(
+const EnquirySchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -34,8 +34,6 @@ const userEnquirySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Enquiry_User =
-  mongoose.models.users_enquiry ||
-  mongoose.model("users_enquiry", userEnquirySchema);
+const Enquiry_Form = mongoose.model("users_enquiry", EnquirySchema);
 
-export default Enquiry_User;
+export default Enquiry_Form;
