@@ -2,9 +2,9 @@ import User from "../models/users.js";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-const crypto = require("crypto");
 import cookie from "cookie";
 import { authenticate } from "../utils/isAuthenticate.js";
+import { sendEmail } from "../utils/sendMail.js";
 
 const signUp = async (req, res) => {
   try {
@@ -49,12 +49,14 @@ const signUp = async (req, res) => {
     const otpExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes expiry
     existingUser.otp = await bcrypt.hash(otp, 10);
     existingUser.otpExpiry = otpExpiry;
+    existingUser.deleteAt = new Date(otpExpiry) 
+    // existingUser.deleteAt = new Date(otpExpiry) + 30 * 1000; //added 30 sec 
 
     await existingUser.save();
 
     const data = { existingUser, otp };
 
-    // await sendEmail(existingUser.email, data, "verifyOtp");
+    await sendEmail(existingUser.email, data, "verifyOtp");
 
     return res.status(201).json({
       success: true,
@@ -101,6 +103,7 @@ const verify = async (req, res) => {
     if (Date.now() > user.otpExpiry) {
       user.otp = undefined;
       user.otpExpiry = undefined;
+      user.deleteAt = undefined;
       await user.save();
 
       return res.status(401).json({
@@ -120,6 +123,7 @@ const verify = async (req, res) => {
     user.isVerified = true;
     user.otp = undefined;
     user.otpExpiry = undefined;
+    user.deleteAt = undefined; 
     await user.save();
 
     const token = jwt.sign(
@@ -137,8 +141,9 @@ const verify = async (req, res) => {
     res.setHeader(
       "Set-Cookie",
       cookie.serialize("auth_token", token, {
-        httpOnly: true,
+        httpOnly: true, //enable in
         // secure: process.env.NODE_ENV === "production", // Secure in production
+        secure: false, // enable true in live
         sameSite: "lax",
         path: "/",
       })
@@ -196,6 +201,15 @@ const login = async (req, res) => {
         .json({ success: false, message: "User not found." });
     }
 
+    // Check if the user is verified
+    if (!user.isVerified) {
+      return res.status(403).json({
+        success: false,
+        message: "User is not verified. Please verify your account first.",
+        description :"Regenerate Otp Or Sign-Up again."
+      });
+    }
+
     if (isEmail) {
       if (!password) {
         return res.status(400).json({
@@ -244,16 +258,18 @@ const login = async (req, res) => {
       "Set-Cookie",
       cookie.serialize("auth_token", token, {
         httpOnly: true,
-        // secure: process.env.NODE_ENV === "production",
+        secure: false, // false for local true for online
         sameSite: "lax",
         path: "/",
       })
     );
+    console.log("Log in Success");
 
     return res.status(200).json({
       success: true,
       message: "Login successful.",
       userId: user._id,
+      // token:token
     });
   } catch (error) {
     console.error("Error:", error);

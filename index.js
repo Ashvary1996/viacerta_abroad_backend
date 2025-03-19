@@ -7,7 +7,7 @@ import { createServer } from "http";
 import cors from "cors";
 import socketFn from "./socketConnector.js";
 
-// const cookieParser = require("cookie-parser");
+import cookieParser from "cookie-parser";
 
 const app = express();
 const server = createServer(app);
@@ -26,7 +26,7 @@ app.use(
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-// app.use(cookieParser());
+app.use(cookieParser());
 
 // .................................................................
 

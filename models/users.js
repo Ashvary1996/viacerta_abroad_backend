@@ -62,9 +62,15 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    deleteAt: {
+      type: Date, // Field for TTL index
+    },
   },
   { timestamps: true }
 );
+// Add TTL index to auto-delete unverified users after OTP expiry
+
+userSchema.index({ deleteAt: 1 }, { expireAfterSeconds: 0 });
 
 const User = mongoose.model("users", userSchema);
 

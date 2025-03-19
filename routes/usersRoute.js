@@ -12,13 +12,13 @@ import {
 
 const route = express.Router();
 
-route.post("/signup", signUp);
-route.post("/signup/verify", verify);
-route.post("/login", login);
-route.get("/me", me);
+route.post("/signup", signUp); // working
+route.post("/signup/verify", verify); // working
+route.post("/login", login); //working
+route.get("/me", me); //working
 route.put("/update_profile", updateProfile);
-route.post("/forgot_password", forgotPassword);
-route.post("/reset-password", resetPassword);
-route.post("/logout", logOut);
+route.post("/forgot-password", forgotPassword); // working
+route.post("/reset-password", resetPassword); // working
+route.post("/logout", logOut); //working
 
 export default route;
