@@ -1,10 +1,10 @@
 import User from "../models/users.js";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import cookie from "cookie";
-import { authenticate } from "../utils/isAuthenticate.js";
+// import cookie from "cookie";
+
 import { sendEmail } from "../utils/sendMail.js";
+import { generateToken } from "../utils/genToken.js";
 
 const signUp = async (req, res) => {
   try {
@@ -49,8 +49,8 @@ const signUp = async (req, res) => {
     const otpExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes expiry
     existingUser.otp = await bcrypt.hash(otp, 10);
     existingUser.otpExpiry = otpExpiry;
-    existingUser.deleteAt = new Date(otpExpiry) 
-    // existingUser.deleteAt = new Date(otpExpiry) + 30 * 1000; //added 30 sec 
+    existingUser.deleteAt = new Date(otpExpiry);
+    // existingUser.deleteAt = new Date(otpExpiry) + 30 * 1000; //added 30 sec
 
     await existingUser.save();
 
@@ -123,31 +123,33 @@ const verify = async (req, res) => {
     user.isVerified = true;
     user.otp = undefined;
     user.otpExpiry = undefined;
-    user.deleteAt = undefined; 
+    user.deleteAt = undefined;
     await user.save();
 
-    const token = jwt.sign(
-      {
-        id: user._id,
-        email: user.email,
-        mobile: user.mobile,
-        role: user.role,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    generateToken(user, res);
 
-    // Set token as a cookie
-    res.setHeader(
-      "Set-Cookie",
-      cookie.serialize("auth_token", token, {
-        httpOnly: true, //enable in
-        // secure: process.env.NODE_ENV === "production", // Secure in production
-        secure: false, // enable true in live
-        sameSite: "lax",
-        path: "/",
-      })
-    );
+    // const token = jwt.sign(
+    //   {
+    //     id: user._id,
+    //     email: user.email,
+    //     mobile: user.mobile,
+    //     role: user.role,
+    //   },
+    //   process.env.JWT_SECRET,
+    //   { expiresIn: "7d" }
+    // );
+
+    // // Set token as a cookie
+    // res.setHeader(
+    //   "Set-Cookie",
+    //   cookie.serialize("auth_token", token, {
+    //     httpOnly: true, //enable in
+    //     // secure: process.env.NODE_ENV === "production", // Secure in production
+    //     secure: false, // enable true in live
+    //     sameSite: "lax",
+    //     path: "/",
+    //   })
+    // );
 
     return res.status(200).json({
       success: true,
@@ -206,7 +208,7 @@ const login = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: "User is not verified. Please verify your account first.",
-        description :"Regenerate Otp Or Sign-Up again."
+        description: "Regenerate Otp Or Sign-Up again.",
       });
     }
 
@@ -241,33 +243,34 @@ const login = async (req, res) => {
         userId: user._id,
       });
     }
-
-    const token = jwt.sign(
-      {
-        id: user._id,
-        email: user.email,
-        mobile: user.mobile,
-        role: user.role,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    generateToken(user, res);
+    // const token = jwt.sign(
+    //   {
+    //     id: user._id,
+    //     email: user.email,
+    //     mobile: user.mobile,
+    //     role: user.role,
+    //   },
+    //   process.env.JWT_SECRET,
+    //   { expiresIn: "7d" }
+    // );
 
     // Set token as a cookie
-    res.setHeader(
-      "Set-Cookie",
-      cookie.serialize("auth_token", token, {
-        httpOnly: true,
-        secure: false, // false for local true for online
-        sameSite: "lax",
-        path: "/",
-      })
-    );
-    console.log("Log in Success");
+    // res.setHeader(
+    //   "Set-Cookie",
+    //   cookie.serialize("auth_token", token, {
+    //     httpOnly: true,
+    //     secure: false, // false for local true for online
+    //     sameSite: "lax",
+    //     path: "/",
+    //   })
+    // );
+
+    console.log(`${user.name} : Log in Success`);
 
     return res.status(200).json({
       success: true,
-      message: "Login successful.",
+      message: `${user.name} Logged-In successful.`,
       userId: user._id,
       // token:token
     });
@@ -280,13 +283,8 @@ const login = async (req, res) => {
 };
 
 const me = async (req, res) => {
-  const auth = await authenticate(req);
-
-  if (!auth.success) {
-    return res.status(401).json({ success: false, message: auth.message });
-  }
   try {
-    const myDetails = await User.findById(auth.user.id);
+    const myDetails = await User.findById(req.user.id);
     if (!myDetails) {
       return res
         .status(404)
@@ -295,7 +293,7 @@ const me = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Protected route accessed",
-      fromToken: auth.user,
+      // fromToken: auth.user,
       user: myDetails,
     });
   } catch (error) {
@@ -309,16 +307,16 @@ const me = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { id, name, email, mobile, address, role } = req.body;
+    const { name, email, mobile, address, role } = req.body;
 
-    if (!id) {
+    if (!req.user.id) {
       return res
         .status(400)
         .json({ success: false, message: "User ID is required." });
     }
 
     const updatedUser = await User.findByIdAndUpdate(
-      id,
+      req.user.id,
       { name, email, mobile, address, role },
       { new: true }
     );
@@ -336,6 +334,57 @@ const updateProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating user:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error.",
+      error: error.message,
+    });
+  }
+};
+const updatePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!req.user.id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User ID is required." });
+    }
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Wrong Password" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      { password: hashedPassword },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Password changed successfully.",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating password", error);
     res.status(500).json({
       success: false,
       message: "Internal Server Error.",
@@ -436,20 +485,21 @@ const resetPassword = async (req, res) => {
 
 const logOut = async (req, res) => {
   try {
-    res.setHeader(
-      "Set-Cookie",
-      cookie.serialize("auth_token", "", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/",
-        expires: new Date(0),
-      })
-    );
+    res.clearCookie("auth_token", {
+      httpOnly: true,
+      // secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      path: "/",
+    });
 
-    res.status(200).json({ success: true, message: "Logged out successfully" });
+    return res
+      .status(200)
+      .json({ success: true, message: "Logged out successfully" });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Logout failed", error });
+    console.error("Logout Error:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Logout failed", error });
   }
 };
 
@@ -462,4 +512,5 @@ export {
   forgotPassword,
   resetPassword,
   logOut,
+  updatePassword,
 };

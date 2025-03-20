@@ -20,7 +20,6 @@
   "description": "",
   "dependencies": {
     "axios": "^1.8.3",
-    "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
     "cookie": "^1.0.2",
     "cookie-parser": "^1.4.7",
@@ -28,7 +27,6 @@
     "dotenv": "^16.4.7",
     "exceljs": "^4.4.0",
     "express": "^4.21.2",
-    "jose": "^6.0.10",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.12.1",
