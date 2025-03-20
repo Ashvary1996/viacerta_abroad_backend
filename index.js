@@ -3,16 +3,21 @@ import express from "express";
 import bodyParser from "body-parser";
 import connectToDb from "./config/dbConfig.js"; // Add `.js` to avoid ESM errors
 import userRoutes from "./routes/usersRoute.js"; // Add `.js`
-import { createServer } from "http";
+import blogRoutes from "./routes/blogRoute.js"; // Add `.js`
+import coursesRoutes from "./routes/coursesRoute.js"; // Add `.js`
+import mbbsRoutes from "./routes/campaignRoute.js"; // Add `.js`
+import ourStudentsRoutes from "./routes/ourStudentsRoute.js"; // Add `.js`
+import EnquiryRoutes from "./routes/enquiryRoute.js"; // Add `.js`
+// import { createServer } from "http";
 import cors from "cors";
-import socketFn from "./socketConnector.js";
+// import socketFn from "./socketConnector.js";
 
 import cookieParser from "cookie-parser";
 
 const app = express();
-const server = createServer(app);
+// const server = createServer(app);
 const port = process.env.PORT || 8000;
-socketFn(server);
+// socketFn(server);
 
 // .............................................................
 
@@ -29,13 +34,19 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // .................................................................
-
+// All Routes
 app.use("/demo", (req, res) => res.send("Hello World"));
 app.use("/api/user", userRoutes);
+app.use("/api/blogs", blogRoutes);
+app.use("/api/courses", coursesRoutes);
+app.use("/api/campaign", mbbsRoutes);
+app.use("/api/ourStudents", ourStudentsRoutes);
+app.use("/api/enquiry", EnquiryRoutes);
 
 // ///////////////////////////////
 
-server.listen(port, () => console.log(`🚀 Server running on port: ${port}`));
+// server.listen(port, () => console.log(`🚀 Server running on port: ${port}`));
+app.listen(port, () => console.log(`🚀 Server running on port: ${port}`));
 
 connectToDb().catch((err) => {
   console.error("⚠️ Database connection failed:", err.message);

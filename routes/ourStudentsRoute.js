@@ -1,8 +1,8 @@
 import express from "express";
-import { allStudents } from "../controller/OurStudentsController";
+import { allStudents } from "../controller/OurStudentsController.js";
 
 const route = express.Router();
 
-route.get("/students", allStudents);
+route.get("/getAll", allStudents); //working
 
 export default route;

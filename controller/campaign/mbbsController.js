@@ -1,7 +1,5 @@
-import { sendEmail } from "../utils/sendEmail.js";
 import MBBS_InterestedUser from "../../models/campaign/mbbs.js";
 
- 
 const newMBBS_InterestedUser = async (req, res) => {
   try {
     const { name, mobile, email, qualification, selectedCountry } = req.body;
@@ -45,8 +43,7 @@ const newMBBS_InterestedUser = async (req, res) => {
   }
 };
 
- 
-const gettAllMbbsUsers = async (req, res) => {
+const getAllMbbsUsers = async (req, res) => {
   try {
     const users = await MBBS_InterestedUser.find({}).sort({ createdAt: -1 });
     res
@@ -58,4 +55,4 @@ const gettAllMbbsUsers = async (req, res) => {
   }
 };
 
-export { newMBBS_InterestedUser, gettAllMbbsUsers };
+export { newMBBS_InterestedUser, getAllMbbsUsers };

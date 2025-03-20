@@ -1,4 +1,4 @@
-import OurStudents from "../models/ourStudents";
+import OurStudents from "../models/ourStudents.js";
 
 const allStudents = async (req, res) => {
   try {

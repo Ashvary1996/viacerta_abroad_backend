@@ -1,4 +1,4 @@
-import Enquiry_Form from "../models/enquiryForm";
+import Enquiry_Form from "../models/enquiryForm.js";
 
 const createEnquiry = async (req, res) => {
   try {
@@ -19,10 +19,10 @@ const createEnquiry = async (req, res) => {
       });
     }
 
-    const user = new Enquiry_User({ name, email, mobile });
+    const user = new Enquiry_Form({ name, email, mobile });
     await user.save();
 
-    await sendEmail(process.env.EMAIL_SEND_TO, user, "counselingForm");
+    // await sendEmail(process.env.EMAIL_SEND_TO, user, "counselingForm");
 
     res.status(201).json({
       success: true,
@@ -37,10 +37,9 @@ const createEnquiry = async (req, res) => {
   }
 };
 
-// Handle GET request - Fetch all users
 const getAllEnquires = async (req, res) => {
   try {
-    const users = await Enquiry_User.find();
+    const users = await Enquiry_Form.find({});
 
     res.status(200).json({
       success: true,

@@ -1,6 +1,6 @@
 import express from "express";
 
-import { checkWhatsapp, whatsAppChat } from "../controller/WhatsAppController";
+import { checkWhatsapp, whatsAppChat } from "../controller/WhatsAppController.js";
 
 const route = express.Router();
 
