@@ -1,3 +1,5 @@
+import User from "../../models/users.js";
+
 const allUsers = async (req, res) => {
   try {
     const users = await User.find();
@@ -28,6 +30,18 @@ const updateUser = async (req, res) => {
         .json({ success: false, message: "User ID is required." });
     }
 
+    const existingUser = await User.findOne({
+      $or: [{ email }, { mobile }],
+      _id: { $ne: id },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email or mobile number already exists.",
+      });
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       id,
       { name, email, mobile, address, role },
@@ -55,7 +69,6 @@ const updateUser = async (req, res) => {
   }
 };
 
-// ✅ DELETE: Remove a user
 const removeUser = async (req, res) => {
   try {
     const { id } = req.body;
@@ -89,30 +102,4 @@ const removeUser = async (req, res) => {
   }
 };
 
-const removeAllUnverifiedUsers = async (req, res) => {
-  try {
-    const deleteResult = await User.deleteMany({ isVerified: false });
-
-    if (deleteResult.deletedCount === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No unverified users found to delete.",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: `Successfully deleted ${deleteResult.deletedCount} unverified users.`,
-      deleteResult,
-    });
-  } catch (error) {
-    console.error("❌ Error deleting unverified users:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal Server Error.",
-      error: error.message,
-    });
-  }
-};
-
-export { allUsers, updateUser, removeUser, removeAllUnverifiedUsers };
+export { allUsers, updateUser, removeUser };

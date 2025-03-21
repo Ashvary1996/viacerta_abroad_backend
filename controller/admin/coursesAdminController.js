@@ -1,3 +1,5 @@
+import Course from "../../models/courses.js";
+
 const newCourse = async (req, res) => {
   try {
     const {
@@ -63,7 +65,6 @@ const newCourse = async (req, res) => {
   }
 };
 
-// ✅ GET: Fetch all courses
 const getAllCourses = async (req, res) => {
   try {
     const courses = await Course.find();
@@ -76,7 +77,6 @@ const getAllCourses = async (req, res) => {
   }
 };
 
-// ✅ PUT: Update a course
 const updateCourses = async (req, res) => {
   try {
     const { id, ...updateData } = req.body;
@@ -108,7 +108,6 @@ const updateCourses = async (req, res) => {
   }
 };
 
-// ✅ DELETE: Delete a course
 const deleteCourse = async (req, res) => {
   try {
     const { id } = req.body;
@@ -138,4 +137,4 @@ const deleteCourse = async (req, res) => {
   }
 };
 
-export { getAllCourses, updateCourses, deleteCourse };
+export { newCourse, getAllCourses, updateCourses, deleteCourse };

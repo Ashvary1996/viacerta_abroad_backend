@@ -8,11 +8,13 @@ import coursesRoutes from "./routes/coursesRoute.js"; // Add `.js`
 import mbbsRoutes from "./routes/campaignRoute.js"; // Add `.js`
 import ourStudentsRoutes from "./routes/ourStudentsRoute.js"; // Add `.js`
 import EnquiryRoutes from "./routes/enquiryRoute.js"; // Add `.js`
+import AdminRoutes from "./routes/adminRoute.js"; // Add `.js`
 // import { createServer } from "http";
 import cors from "cors";
 // import socketFn from "./socketConnector.js";
 
 import cookieParser from "cookie-parser";
+import { authorizedRole, isAuthenticatedUser } from "./middleware/auth.js";
 
 const app = express();
 // const server = createServer(app);
@@ -42,6 +44,12 @@ app.use("/api/courses", coursesRoutes);
 app.use("/api/campaign", mbbsRoutes);
 app.use("/api/ourStudents", ourStudentsRoutes);
 app.use("/api/enquiry", EnquiryRoutes);
+app.use(
+  "/api/admin",
+  isAuthenticatedUser,
+  authorizedRole(["admin"]),
+  AdminRoutes
+);
 
 // ///////////////////////////////
 
@@ -64,3 +72,5 @@ process.on("unhandledRejection", (reason, promise) => {
 });
 
 export default app;
+// const crypto = require('crypto');
+// console.log(crypto.constants.OPENSSL_VERSION);

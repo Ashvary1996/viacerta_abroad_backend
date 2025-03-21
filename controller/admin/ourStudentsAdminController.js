@@ -1,3 +1,5 @@
+import OurStudents from "../../models/ourStudents.js";
+
 const newStudent = async (req, res) => {
   try {
     const {
@@ -49,7 +51,6 @@ const getStudents = async (req, res) => {
   }
 };
 
-// ✅ PUT: Update student details
 const updateStudent = async (req, res) => {
   try {
     const {
@@ -101,7 +102,6 @@ const updateStudent = async (req, res) => {
   }
 };
 
-// ✅ DELETE: Remove a student
 const removeStudent = async (req, res) => {
   try {
     const { id } = req.body;

@@ -6,6 +6,6 @@ client
 client/node_modules
 todos.txt
 
-
+config/imp.json
 
 gpg-agent --daemon

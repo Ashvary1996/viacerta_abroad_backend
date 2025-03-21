@@ -1,51 +1,53 @@
 import express from "express";
 import {
-  createNewBlog,
-  deleteBlog,
   getAllBlog,
   updateBlog,
-} from "../controller/admin/blogAdminController";
+  deleteBlog,
+  createBlog,
+} from "../controller/admin/blogAdminController.js";
 import {
+  newCourse,
   deleteCourse,
   getAllCourses,
   updateCourses,
-} from "../controller/admin/coursesAdminController";
-import {
-  getStudents,
-  newStudent,
-  removeStudent,
-  updateStudent,
-} from "../controller/admin/ourStudentsAdminController";
+} from "../controller/admin/coursesAdminController.js";
 import {
   allUsers,
-  removeAllUnverifiedUsers,
-} from "../controller/admin/userAdminController";
+  updateUser,
+  removeUser,
+} from "../controller/admin/userAdminController.js";
+import {
+  newStudent,
+  getStudents,
+  updateStudent,
+  removeStudent,
+} from "../controller/admin/ourStudentsAdminController.js";
 
 const route = express.Router();
 
-route.get("/blogs", getAllBlog);
-route.post("/blogs", createNewBlog);
-route.put("/blogs", updateBlog);
-route.delete("/blogs", deleteBlog);
+route.post("/blogs/create", createBlog); //working
+route.get("/blogs/all", getAllBlog); // working
+route.put("/blogs/update", updateBlog); //working
+route.delete("/blogs/delete", deleteBlog); //working
 
-// ----------------
+// // ----------------
 
-route.get("/courses", getAllCourses);
-route.put("/courses", updateCourses);
-route.delete("/courses", deleteCourse);
+route.post("/courses/create", newCourse); //working
+route.get("/courses/all", getAllCourses); //working
+route.put("/courses/update", updateCourses); //working
+route.delete("/courses/remove", deleteCourse); //working
 
-// ----------------
-route.get("/our_students", getStudents);
-route.post("/our_students", newStudent);
-route.put("/our_students", updateStudent);
-route.delete("/our_students", removeStudent);
+// // ----------------
+route.get("/our_students/getall", getStudents); //working
+route.post("/our_students/create", newStudent); //working
+route.put("/our_students/update", updateStudent); //working
+route.delete("/our_students/remove", removeStudent); //working
 
 // -----------------
 
-route.get("/users", allUsers);
-route.put("/users", updateStudent);
-route.delete("/users", removeStudent);
-route.delete("/users/delete_unverified", removeAllUnverifiedUsers);
+route.get("/users/all", allUsers); //working
+route.put("/users/update", updateUser); // working
+route.delete("/users/remove", removeUser); //working
 
 // ------------------
 
